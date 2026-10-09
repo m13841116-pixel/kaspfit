@@ -1,0 +1,6 @@
+{
+  "name": "KASP Fit - برنامه‌ریز ورزشی و آنالیز هوشمند فرم بدنی",
+  "description": "پلتفرم جامع تناسب اندام، سنجش شاخص‌های بدنی، برنامه‌ریزی تمرینی هفتگی با هوش مصنوعی، آنالیز فرم حرکات ورزشی و تایمر حرفه‌ای تمرین",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
