@@ -36,6 +36,8 @@ import {
   Calendar,
   Check,
 } from 'lucide-react';
+import { PrintDossierModal } from './PrintDossierModal';
+import { DEFAULT_WEEKLY_PLAN } from '../utils/fitnessCalculations';
 
 interface AssessmentTabProps {
   profile: UserProfile;
@@ -43,6 +45,7 @@ interface AssessmentTabProps {
   plan?: WeeklyWorkoutPlan;
   currentUser?: AuthUser | null;
   onProceedToPlanner: () => void;
+  onOpenPrintModal?: (mode?: 'full' | 'plan_only' | 'assessment_only') => void;
 }
 
 export const AssessmentTab: React.FC<AssessmentTabProps> = ({
@@ -51,12 +54,14 @@ export const AssessmentTab: React.FC<AssessmentTabProps> = ({
   plan,
   currentUser,
   onProceedToPlanner,
+  onOpenPrintModal,
 }) => {
   const metrics: AssessmentResults = calculateFitnessMetrics(profile);
   const [aiInsights, setAiInsights] = useState<AIInsightResponse | null>(null);
   const [loadingAi, setLoadingAi] = useState<boolean>(false);
   const [aiError, setAiError] = useState<string | null>(null);
   const [isScientificModalOpen, setIsScientificModalOpen] = useState<boolean>(false);
+  const [isPrintModalOpen, setIsPrintModalOpen] = useState<boolean>(false);
   const [showDemoToast, setShowDemoToast] = useState<boolean>(false);
 
   const handleInputChange = (field: keyof UserProfile, value: any) => {
@@ -87,7 +92,11 @@ export const AssessmentTab: React.FC<AssessmentTabProps> = ({
 
   // 2. Print / PDF Export
   const handlePrintDossier = () => {
-    window.print();
+    if (onOpenPrintModal) {
+      onOpenPrintModal('full');
+    } else {
+      setIsPrintModalOpen(true);
+    }
   };
 
   const fetchAIInsights = async () => {
@@ -1041,49 +1050,100 @@ export const AssessmentTab: React.FC<AssessmentTabProps> = ({
           </div>
         )}
 
-        {/* Section 4: Weekly Training Schedule Summary (if plan available) */}
+        {/* Section 4: Complete Weekly Training Protocol (if plan available) */}
         {plan && plan.days && (
-          <div className="printable-card p-4 rounded-xl mb-4 bg-slate-50 border border-slate-300">
-            <h2 className="text-sm font-bold text-slate-900 mb-2 border-b border-slate-200 pb-1">
-              ۴. خلاصه تقویم تمرینی ۷ روزه ({plan.planTitle || 'برنامه هفتگی KASP Fit'})
+          <div className="printable-card p-4 rounded-xl mb-4 bg-slate-50 border border-slate-300 page-break-before">
+            <h2 className="text-sm font-bold text-slate-900 mb-2 border-b border-slate-200 pb-1 flex items-center justify-between">
+              <span>۴. پروتکل و تقویم تمرینی جامع ۷ روزه ({plan.planTitle || 'برنامه هفتگی KASP Fit'})</span>
+              <span className="text-[11px] font-mono text-slate-500">شنبه تا جمعه</span>
             </h2>
-            <table className="w-full text-xs text-right border-collapse">
-              <thead>
-                <tr className="border-b border-slate-300 text-slate-700 bg-slate-100">
-                  <th className="py-1.5 px-2">روز</th>
-                  <th className="py-1.5 px-2">تمرکز عضلانی</th>
-                  <th className="py-1.5 px-2">تعداد حرکات</th>
-                  <th className="py-1.5 px-2">شدت و مدت</th>
-                </tr>
-              </thead>
-              <tbody>
-                {plan.days.map((day, idx) => (
-                  <tr key={idx} className="border-b border-slate-200">
-                    <td className="py-1.5 px-2 font-bold">{day.dayName}</td>
-                    <td className="py-1.5 px-2">{day.focus}</td>
-                    <td className="py-1.5 px-2">
-                      {day.isRestDay ? 'استراحت فعال' : `${day.exercises.length} حرکت`}
-                    </td>
-                    <td className="py-1.5 px-2">{day.estimatedDuration}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+
+            {plan.overview && (
+              <p className="text-xs text-slate-600 mb-3 leading-relaxed">{plan.overview}</p>
+            )}
+
+            <div className="space-y-3">
+              {plan.days.map((day, dIdx) => (
+                <div key={dIdx} className="avoid-break bg-white p-2.5 rounded-lg border border-slate-200">
+                  <div className="flex items-center justify-between pb-1 mb-1.5 border-b border-slate-200">
+                    <div className="flex items-center gap-2">
+                      <span className="px-2 py-0.5 rounded bg-slate-100 font-bold text-xs text-slate-900 border border-slate-300">
+                        {day.dayName}
+                      </span>
+                      <span className="text-xs font-bold text-slate-800">
+                        تمرکز: {day.focus}
+                      </span>
+                    </div>
+                    <span className="text-[10px] text-slate-500">
+                      مدت: {day.estimatedDuration} | شدت: {day.intensity}
+                    </span>
+                  </div>
+
+                  {day.isRestDay ? (
+                    <div className="p-1.5 bg-slate-50 rounded border border-slate-200 text-[11px] text-slate-600 flex items-center gap-1.5">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-sky-600 shrink-0" />
+                      <span>روز استراحت فعال، بازیابی عضلانی و تحرک مفاصل</span>
+                    </div>
+                  ) : (
+                    <table className="printable-table text-right">
+                      <thead>
+                        <tr>
+                          <th style={{ width: '6%' }}>ردیف</th>
+                          <th style={{ width: '38%' }}>حرکت ورزشی (فارسی و انگلیسی)</th>
+                          <th style={{ width: '10%', textAlign: 'center' }}>ست</th>
+                          <th style={{ width: '12%', textAlign: 'center' }}>تکرار</th>
+                          <th style={{ width: '14%', textAlign: 'center' }}>استراحت</th>
+                          <th style={{ width: '20%' }}>نکته ایمنی بیومکانیکی</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {day.exercises.map((ex, exIdx) => (
+                          <tr key={ex.id || exIdx}>
+                            <td className="font-mono text-center">{exIdx + 1}</td>
+                            <td>
+                              <strong className="block text-slate-900 text-[11px]">{ex.nameFa}</strong>
+                              <span className="text-[9.5px] text-slate-500 font-sans block">{ex.nameEn}</span>
+                            </td>
+                            <td className="text-center font-bold text-[11px]">{ex.sets}</td>
+                            <td className="text-center font-bold text-emerald-800 text-[11px]">{ex.reps}</td>
+                            <td className="text-center text-slate-700 font-mono text-[10.5px]">
+                              {ex.restSeconds}s
+                            </td>
+                            <td className="text-[10px] text-slate-600 leading-snug">{ex.formTip}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
         {/* Signature & Official Seal Box */}
-        <div className="mt-8 pt-4 border-t border-slate-300 flex items-center justify-between text-xs text-slate-600">
+        <div className="avoid-break mt-6 pt-3 border-t-2 border-slate-300 flex items-center justify-between text-xs text-slate-600">
           <div>
-            <span>تأییدیه سیستم فیزیولوژی ورزشی KASP FIT</span>
-            <div className="font-bold text-slate-900 mt-1">سامانه هوشمند سلامت و تربیت بدنی</div>
+            <span className="font-bold text-slate-900 block">تأییدیه سیستم فیزیولوژی ورزشی KASP FIT</span>
+            <span className="text-[10px] text-slate-500">سامانه هوشمند سلامت و تربیت بدنی</span>
           </div>
           <div className="text-center">
-            <span className="block mb-6">مهر و امضای متخصص تربیت بدنی / مربی</span>
+            <span className="block mb-4 text-[10px] text-slate-500">مهر و امضای متخصص تربیت بدنی / مربی</span>
             <span className="inline-block border-t border-slate-400 w-44"></span>
           </div>
         </div>
       </div>
+
+      {/* Print and Save PDF Modal */}
+      <PrintDossierModal
+        isOpen={isPrintModalOpen}
+        onClose={() => setIsPrintModalOpen(false)}
+        profile={profile}
+        plan={plan || DEFAULT_WEEKLY_PLAN}
+        currentUser={currentUser}
+        aiInsights={aiInsights}
+        initialMode="full"
+      />
     </div>
   );
 };

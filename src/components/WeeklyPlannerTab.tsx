@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { WeeklyWorkoutPlan, UserProfile, WorkoutDay, Exercise } from '../types/fitness';
+import { WeeklyWorkoutPlan, UserProfile, WorkoutDay, Exercise, AuthUser } from '../types/fitness';
+import { PrintDossierModal } from './PrintDossierModal';
 import {
   CalendarDays,
   Sparkles,
@@ -29,20 +30,25 @@ interface WeeklyPlannerTabProps {
   plan: WeeklyWorkoutPlan;
   setPlan: React.Dispatch<React.SetStateAction<WeeklyWorkoutPlan>>;
   profile: UserProfile;
+  currentUser?: AuthUser | null;
   onLaunchTimerForRest: (seconds: number) => void;
   onLaunchPoseCheckerForExercise: (exerciseName: string) => void;
+  onOpenPrintModal?: (mode?: 'full' | 'plan_only' | 'assessment_only') => void;
 }
 
 export const WeeklyPlannerTab: React.FC<WeeklyPlannerTabProps> = ({
   plan,
   setPlan,
   profile,
+  currentUser,
   onLaunchTimerForRest,
   onLaunchPoseCheckerForExercise,
+  onOpenPrintModal,
 }) => {
   const [selectedDayIndex, setSelectedDayIndex] = useState<number>(0);
   const [viewMode, setViewMode] = useState<'daily' | 'full_calendar'>('daily');
   const [isGeneratorModalOpen, setIsGeneratorModalOpen] = useState<boolean>(false);
+  const [isPrintModalOpen, setIsPrintModalOpen] = useState<boolean>(false);
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [generateError, setGenerateError] = useState<string | null>(null);
 
@@ -125,7 +131,11 @@ export const WeeklyPlannerTab: React.FC<WeeklyPlannerTabProps> = ({
   };
 
   const handlePrintPlan = () => {
-    window.print();
+    if (onOpenPrintModal) {
+      onOpenPrintModal('full');
+    } else {
+      setIsPrintModalOpen(true);
+    }
   };
 
   const totalExercises = currentDay.exercises.length;
@@ -134,19 +144,6 @@ export const WeeklyPlannerTab: React.FC<WeeklyPlannerTabProps> = ({
 
   return (
     <div className="space-y-6 pb-16">
-      {/* Printable Sheet Header (Visible ONLY on print) */}
-      <div className="hidden print:block mb-6 text-center border-b pb-4">
-        <h1 className="text-2xl font-bold text-slate-900 mb-1">
-          KASP FIT · تقویم تمرینی جامع و تخصصی ۷ روزه
-        </h1>
-        <p className="text-xs text-slate-600 mb-2">
-          ورزشکار: {profile.gender === 'male' ? 'آقا' : 'خانم'} | سن: {profile.age} سال | وزن: {profile.weight}kg | قد: {profile.height}cm | هدف: {profile.goal}
-        </p>
-        <p className="text-xs text-slate-500">
-          تاریخ تولید برنامه: {plan.generatedAt || 'امروز'} | {plan.planTitle}
-        </p>
-      </div>
-
       {/* Main Top Header Banner */}
       <div className="no-print bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-7 shadow-xl space-y-5">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
@@ -848,6 +845,16 @@ export const WeeklyPlannerTab: React.FC<WeeklyPlannerTabProps> = ({
           </div>
         </div>
       )}
+
+      {/* Print and Save PDF Modal */}
+      <PrintDossierModal
+        isOpen={isPrintModalOpen}
+        onClose={() => setIsPrintModalOpen(false)}
+        profile={profile}
+        plan={plan}
+        currentUser={currentUser}
+        initialMode="full"
+      />
     </div>
   );
 };

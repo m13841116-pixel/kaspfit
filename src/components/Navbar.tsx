@@ -1,6 +1,6 @@
 import React from 'react';
 import { TabType, AuthUser, UserRole } from '../types/fitness';
-import { Activity, CalendarDays, Camera, Timer, Dumbbell, Zap, LogOut, User, ShieldCheck, GraduationCap } from 'lucide-react';
+import { Activity, CalendarDays, Camera, Timer, Dumbbell, Zap, LogOut, User, ShieldCheck, GraduationCap, Printer } from 'lucide-react';
 
 interface NavbarProps {
   activeTab: TabType;
@@ -8,6 +8,7 @@ interface NavbarProps {
   currentUser?: AuthUser | null;
   onLogout?: () => void;
   onQuickStartWorkout?: () => void;
+  onOpenPrintModal?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -16,6 +17,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   currentUser,
   onLogout,
   onQuickStartWorkout,
+  onOpenPrintModal,
 }) => {
   const navItems: { id: TabType; label: string; icon: React.ReactNode }[] = [
     { id: 'assessment', label: 'سنجش وضعیت', icon: <Activity className="w-4 h-4" /> },
@@ -95,6 +97,19 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {/* Zone 3: Primary Action & User Profile */}
           <div className="flex items-center gap-2 sm:gap-3">
+            {/* Print & PDF Export Shortcut Button */}
+            {onOpenPrintModal && (
+              <button
+                type="button"
+                onClick={onOpenPrintModal}
+                title="چاپ و ذخیره پرونده و برنامه تمرینی (خروجی PDF)"
+                className="flex items-center gap-1.5 px-2.5 sm:px-3 py-2 text-xs font-semibold text-slate-300 hover:text-white bg-slate-900/90 hover:bg-slate-800 border border-slate-800 active:scale-95 transition-all rounded-lg min-h-[38px]"
+              >
+                <Printer className="w-4 h-4 text-sky-400" />
+                <span className="hidden sm:inline">خروجی PDF</span>
+              </button>
+            )}
+
             {/* Quick Start Timer button */}
             <button
               onClick={() => {

@@ -12,6 +12,8 @@ import { WeeklyPlannerTab } from './components/WeeklyPlannerTab';
 import { PoseCheckerTab } from './components/PoseCheckerTab';
 import { WorkoutTimerTab } from './components/WorkoutTimerTab';
 import { AuthScreen } from './components/AuthScreen';
+import { PrintDossierModal, PrintDossierMode } from './components/PrintDossierModal';
+import { PrintableWorkoutDossier } from './components/PrintableWorkoutDossier';
 
 const DEFAULT_PROFILE: UserProfile = {
   age: 26,
@@ -60,6 +62,15 @@ export default function App() {
 
   const [timerPresetSeconds, setTimerPresetSeconds] = useState<number>(60);
   const [poseExerciseName, setPoseExerciseName] = useState<string>('اسکات با هالتر (Barbell Squat)');
+
+  // Print & PDF Export modal state
+  const [isPrintModalOpen, setIsPrintModalOpen] = useState<boolean>(false);
+  const [printModalInitialMode, setPrintModalInitialMode] = useState<PrintDossierMode>('full');
+
+  const handleOpenPrintModal = (mode: PrintDossierMode = 'full') => {
+    setPrintModalInitialMode(mode);
+    setIsPrintModalOpen(true);
+  };
 
   // Sync to localStorage
   useEffect(() => {
@@ -115,6 +126,7 @@ export default function App() {
           setTimerPresetSeconds(60);
           setActiveTab('timer');
         }}
+        onOpenPrintModal={() => handleOpenPrintModal('full')}
       />
 
       {/* Main Content Area (Optimized mobile padding and clearance for Bottom Nav) */}
@@ -126,6 +138,7 @@ export default function App() {
             plan={plan}
             currentUser={currentUser}
             onProceedToPlanner={() => setActiveTab('planner')}
+            onOpenPrintModal={handleOpenPrintModal}
           />
         )}
 
@@ -134,8 +147,10 @@ export default function App() {
             plan={plan}
             setPlan={setPlan}
             profile={profile}
+            currentUser={currentUser}
             onLaunchTimerForRest={handleLaunchTimerForRest}
             onLaunchPoseCheckerForExercise={handleLaunchPoseCheckerForExercise}
+            onOpenPrintModal={handleOpenPrintModal}
           />
         )}
 
@@ -150,6 +165,23 @@ export default function App() {
           <WorkoutTimerTab initialRestSeconds={timerPresetSeconds} />
         )}
       </main>
+
+      {/* Native Browser Print Fallback Container (Hidden on screen, active on Ctrl+P) */}
+      <PrintableWorkoutDossier
+        profile={profile}
+        plan={plan}
+        currentUser={currentUser}
+      />
+
+      {/* Interactive Print & PDF Preview Modal */}
+      <PrintDossierModal
+        isOpen={isPrintModalOpen}
+        onClose={() => setIsPrintModalOpen(false)}
+        profile={profile}
+        plan={plan}
+        currentUser={currentUser}
+        initialMode={printModalInitialMode}
+      />
 
       {/* Clean Uncluttered Footer */}
       <footer className="border-t border-slate-900 bg-slate-950 py-6 text-center text-xs text-slate-500 hidden md:block">
